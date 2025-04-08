@@ -37,7 +37,8 @@
 
 	<ItemGroup>
 		<Reference Include="TrainCrewInput">
-			<HintPath>..\Tatehama_TASC\DLL\TrainCrewInput.dll</HintPath>
+			<HintPath>.\DLL\TrainCrewInput.dll</HintPath>
+			<Private>true</Private>
 		</Reference>
 	</ItemGroup>
 
@@ -81,5 +82,10 @@
 			<Generator>ResXFileCodeGenerator</Generator>
 			<LastGenOutput>RetsubanResource.Designer.cs</LastGenOutput>
 		</EmbeddedResource>
+	</ItemGroup>
+	<ItemGroup>
+		<None Update="Sound\**\*">
+			<CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+		</None>
 	</ItemGroup>
 </Project>
