@@ -1,12 +1,12 @@
 name: Build
 on:
   push: { }
-
+ 
 env:
   APP_NAME: "TatehamaATS"
   NAMESPACE: "TatehamaATS_v1"
   TZ: "Asia/Tokyo"
-
+ 
 jobs:
   calc_version:
     runs-on: ubuntu-latest
@@ -21,18 +21,18 @@ jobs:
         with:
           script: |
             try {
-              const response = await github.rest.repos.getLatestRelease({
+            const response = await github.rest.repos.getLatestRelease({
                 owner: context.repo.owner,
                 repo: context.repo.repo
-              });
-              return response.data.tag_name;
+            });
+            return response.data.tag_name;
             }
             catch (e){
-              if (e.status === 404) {
+            if (e.status === 404) {
                 return '';
-              } else {
+            } else {
                 throw e;
-              }
+            }
             }
       - name: Calculate Version
         id: calc_version
@@ -41,10 +41,10 @@ jobs:
           if [ -n "${latest_tag}" ]; then
             today=$(date +%Y%m%d)
             if [[ $latest_tag == *$today* ]]; then
-              n=$(echo $latest_tag | awk -F. '{print $4}')
-              n=$((n + 1))
+            n=$(echo $latest_tag | awk -F. '{print $4}')
+            n=$((n + 1))
             else
-              n=1
+            n=1
             fi
             VERSION="v1.0.${today}.${n}-beta"
           else
@@ -60,64 +60,61 @@ jobs:
         standalone: [ false, true ]
         dev: [ false, true ]
     steps:
-      - name: Set Zip File Name
-        run: |
-          version=$(echo "${{ needs.calc_version.outputs.VERSION }}" | sed 's/\./_/g')
-          echo "ZIP_FILE_NAME=${{ env.APP_NAME }}_${version}${{ (matrix.dev && '-dev') || ''}}${{ (matrix.standalone && '-standalone') || '' }}.zip" >> $GITHUB_ENV
-      - name: Checkout
-        uses: actions/checkout@v4.2.2
-      - name: Write ServerAddress.cs
-        run: |
-          if [ "${{ matrix.dev }}" = "true" ]; then
-            SERVER_ADDRESS=${{ secrets.SERVER_ADDRESS_DEV }}
-          else
-            SERVER_ADDRESS=${{ secrets.SERVER_ADDRESS }}
-          fi
-          echo "namespace ${{ env.NAMESPACE }}; public static class ServerAddress { public const string SignalAddress = \"${SERVER_ADDRESS}\"; }" > ./ServerAddress.cs
-      - name: Setup dotnet 8.0.x
-        uses: actions/setup-dotnet@v4.3.1
-        with:
-          dotnet-version: '8.0.x'
-      - name: Build Exe
-        run: |
-          dotnet publish -c Release \
-            -o ./out \
-            -r win-x64 \
-            -p:PublishSingleFile=true \
-            -p:EnableWindowsTargeting=true \
-            --self-contained ${{ matrix.standalone }}
-      - name: Zip binaries
-        run: |
-          cd out
-          zip -r ../${{ env.ZIP_FILE_NAME }} .
-      - name: Upload Artifact
-        uses: actions/upload-artifact@v4.6.2
-        with:
-          path: ./${{ env.ZIP_FILE_NAME }}
-          name: ${{ env.ZIP_FILE_NAME }}
+       - name: Set Zip File Name
+         # ZIP_FILE_NAMEは、ビルドしたアプリケーションのファイル名を指定するための環境変数。ソフトによって変えると良さげ
+         run: |
+           version=$(echo "${{ needs.calc_version.outputs.VERSION }}" | sed 's/\./_/g')
+           echo "ZIP_FILE_NAME=${{ env.APP_NAME }}_${version}${{ (matrix.dev && '-dev') || ''}}${{ (matrix.standalone && '-standalone') || '' }}.zip" >> $GITHUB_ENV
+       - name: Checkout
+         uses: actions/checkout@v4.2.2
+       - name: Write ServerAddress.cs
+         run: |
+           if [ "${{ matrix.dev }}" = "true" ]; then
+             SERVER_ADDRESS=${{ secrets.SERVER_ADDRESS_DEV }}
+           else
+             SERVER_ADDRESS=${{ secrets.SERVER_ADDRESS }}
+           fi
+           echo "namespace ${{ env.NAMESPACE }}; public static class ServerAddress { public const string SignalAddress = \"${SERVER_ADDRESS}\"; }" > ./ServerAddress.cs
+       - name: Setup dotnet 8.0.x
+         uses: actions/setup-dotnet@v4.3.1
+         with:
+           dotnet-version: '8.0.x'
+       - name: Build Exe
+         run: |
+           dotnet publish -c Release \
+             -o ./out \
+             -r win-x64 \
+             -p:PublishSingleFile=true \
+             -p:EnableWindowsTargeting=true \
+             --self-contained ${{ matrix.standalone }}
+       - name: Zip binaries
+         run: |
+           cd out
+           zip -r ../${{ env.ZIP_FILE_NAME }} .
+       - name: Upload Artifact
+         uses: actions/upload-artifact@v4.6.2
+         with:
+           path: ./${{ env.ZIP_FILE_NAME }}
+           name: ${{ env.ZIP_FILE_NAME }}
   create_new_release:
-    runs-on: ubuntu-latest
-    name: "Create New Release"
-    permissions:
-      contents: write
-    needs:
-      - calc_version
-      - build
-    steps:
-      - name: Download Artifact
-        uses: actions/download-artifact@v4.2.1
-        with:
-          path: 'out'
-          merge-multiple: 'true'
-      - name: Create New Release
-        id: create_release
-        uses: softprops/action-gh-release@v2.2.1
-        with:
-          tag_name: ${{ needs.calc_version.outputs.VERSION }}
-          make_latest: ${{ github.event_name == 'push' && github.ref == 'refs/heads/master' }}
-          files: |
-            out/*-standalone-dev.zip
-            out/*-dev.zip
-            out/*-standalone.zip
-            out/*.zip
-          prerelease: ${{ github.event_name != 'push' || github.ref != 'refs/heads/master' }}
+     runs-on: ubuntu-latest
+     name: "Create New Release"
+     permissions:
+       contents: write
+     needs:
+       - calc_version
+       - build
+     steps:
+       - name: Download Artifact
+         uses: actions/download-artifact@v4.2.1
+         with:
+           path: 'out'
+           merge-multiple: 'true'
+       - name: Create New Release
+         id: create_release
+         uses: softprops/action-gh-release@v2.2.1
+         with:
+           tag_name: ${{ needs.calc_version.outputs.VERSION }}
+           make_latest: ${{ github.event_name == 'push' && github.ref == 'refs/heads/master' }}
+           files: out/* 
+           prerelease: ${{ github.event_name != 'push' || github.ref != 'refs/heads/master' }}
