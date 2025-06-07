@@ -22,7 +22,8 @@
         Shuppatsu,
         ShuppatsuJikoku,
         Torikeshi,
-        Tenmatsusho,
-        Apology
+        Other,
+        Class,
+        Tenmatsusho
     }
 }

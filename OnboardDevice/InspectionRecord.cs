@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Diagnostics;
+using System.Text;
 using System.Xml.Linq;
 using TatehamaATS_v1.Exceptions;
 using TrainCrewAPI;
@@ -11,6 +12,14 @@ namespace TatehamaATS_v1.OnboardDevice
     /// </summary>
     internal class InspectionRecord
     {
+
+        /// <summary>
+        /// ログファイルパス
+        /// </summary>
+        private static readonly string LogFilePath = Path.Combine(
+            AppDomain.CurrentDomain.BaseDirectory, "inspection_error.log");
+
+
         /// <summary>
         /// 故障情報マスター
         /// </summary>
@@ -131,6 +140,9 @@ namespace TatehamaATS_v1.OnboardDevice
             Debug.WriteLine($"{exception.Message} {exception.InnerException}");
             exceptions[exception.ToCode()] = exception;
             exceptionsTime[exception.ToCode()] = DateTime.Now;
+
+            // ログ出力
+            WriteLog(exception);
         }
 
         /// <summary>
@@ -141,6 +153,48 @@ namespace TatehamaATS_v1.OnboardDevice
         {
             exceptions.Add("39F", new CsharpException(3, exception.ToString()));
             exceptionsTime.Add("39F", DateTime.Now);
+
+            // ログ出力
+            WriteLog(new CsharpException(3, exception.ToString()));
+        }
+
+        /// <summary>
+        /// 故障ログをファイルに追記
+        /// </summary>
+        /// <param name="exception"></param>
+        private void WriteLog(ATSCommonException exception)
+        {
+            try
+            {
+                // 12時間以上前ならリセット
+                if (File.Exists(LogFilePath))
+                {
+                    var lastWrite = File.GetLastWriteTime(LogFilePath);
+                    if ((DateTime.Now - lastWrite).TotalHours >= 12)
+                    {
+                        File.WriteAllText(LogFilePath, string.Empty, Encoding.UTF8);
+                    }
+                }
+                switch (exception.ToCode())
+                {
+                    case "397":
+                    case "5CC":
+                    case "7ED":
+                        return;
+                    default:
+                        var log = $"[{DateTime.Now:yyyy-MM-dd HH:mm:ss.fff}] " +
+                                  $"Code:{exception.ToCode()} " +
+                                  $"Message:{exception.Message} " +
+                                  $"Inner:{exception.InnerException?.Message ?? ""}\n" +
+                                  $"Stack: {exception.StackTrace}";
+                        File.AppendAllText(LogFilePath, log + Environment.NewLine, Encoding.UTF8);
+                        break;
+                }
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"ログ書き込み失敗: {ex.Message}");
+            }
         }
 
         /// <summary>

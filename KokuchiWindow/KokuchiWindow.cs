@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Microsoft.EntityFrameworkCore.Metadata;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Data;
@@ -66,69 +67,229 @@ namespace TatehamaATS_v1.KokuchiWindow
         /// <summary>
         /// 表示内容を変更する
         /// </summary>
-        private void SetLED(OperationNotificationData kokuchiData)
+        private void SetLED(OperationNotificationData kokuchiData, int index = 0)
         {
             try
             {
                 switch (kokuchiData.Type)
                 {
                     case OperationNotificationType.None:
-                        DisplayImageByPos(1, 1);
+                        DisplayImageByPosNum(0, 0);
                         break;
                     case OperationNotificationType.Yokushi:
-                        DisplayImageByPos(1, 18);
+                        DisplayImageByPosNum(0, 1);
                         break;
                     case OperationNotificationType.Tsuuchi:
                     case OperationNotificationType.TsuuchiKaijo:
-                        DisplayImageByPos(1, 35);
+                        if (index == 1)
+                        {
+                            DisplayImageByPosNum(2, 15);
+                            break;
+                        }
+                        DisplayImageByPosNum(0, 2);
                         break;
                     case OperationNotificationType.Shuppatsu:
-                        DisplayImageByPos(1, 52);
+                        DisplayImageByPosNum(0, 3);
                         break;
                     case OperationNotificationType.Kaijo:
-                        DisplayImageByPos(1, 69);
+                        DisplayImageByPosNum(0, 4);
+                        break;
+                    case OperationNotificationType.Torikeshi:
+                        DisplayImageByPosNum(0, 5);
                         break;
                     case OperationNotificationType.Tenmatsusho:
-                        if (kokuchiData.Content == "MC")
+                        if (index == 1)
                         {
-                            DisplayImageByPos(1, 171);
+                            DisplayImageByPosNum(2, 15);
+                            break;
                         }
-                        else if (kokuchiData.Content == "M")
+                        switch (kokuchiData.Content)
                         {
-                            DisplayImageByPos(1, 188);
+                            case "MC":
+                                DisplayImageByPosNum(2, 1);
+                                break;
+                            case "M":
+                                DisplayImageByPosNum(2, 2);
+                                break;
+                            case "C":
+                                DisplayImageByPosNum(2, 3);
+                                break;
+                            case "S":
+                                DisplayImageByPosNum(2, 4);
+                                break;
+                            case "A":
+                                DisplayImageByPosNum(2, 5);
+                                break;
+                            default:
+                                DisplayImageByPosNum(2, 0);
+                                break;
                         }
-                        else if (kokuchiData.Content == "C")
+                        break;
+                    case OperationNotificationType.Other:
+                        switch (kokuchiData.Content)
                         {
-                            DisplayImageByPos(1, 205);
+                            case "Irekae":
+                                DisplayImageByPosNum(0, 8);
+                                break;
+                            case "Orikaeshi":
+                                if (index == 1)
+                                {
+                                    DisplayImageByPosNum(2, 15);
+                                    break;
+                                }
+                                DisplayImageByPosNum(0, 9);
+                                break;
+                            case "Apology":
+                                if (index == 1)
+                                {
+                                    DisplayImageByPosNum(1, 10);
+                                    break;
+                                }
+                                DisplayImageByPosNum(0, 10);
+                                break;
+                            default:
+                                DisplayImageByPosNum(0, 7);
+                                break;
                         }
-                        else if (kokuchiData.Content == "S")
+                        break;
+                    case OperationNotificationType.Class:
+                        //回送行先指定あり
+                        if (kokuchiData.Content == "TH75NiS")
                         {
-                            DisplayImageByPos(50, 171);
+                            switch (index)
+                            {
+                                case 0:
+                                    DisplayImageByPosNum(3, 6);
+                                    break;
+                                case 1:
+                                    DisplayImageByPosNum(0, 11);
+                                    break;
+                                case 2:
+                                    DisplayImageByPosNum(1, 11);
+                                    break;
+                                case 3:
+                                    DisplayImageByPosNum(0, 12);
+                                    break;
+                                default:
+                                    DisplayImageByPosNum(0, 7);
+                                    break;
+                            }
+                            break;
                         }
-                        else if (kokuchiData.Content == "A")
+                        if (kokuchiData.Content == "TH66NiS")
                         {
-                            DisplayImageByPos(50, 188);
+                            switch (index)
+                            {
+                                case 0:
+                                    DisplayImageByPosNum(3, 6);
+                                    break;
+                                case 1:
+                                    DisplayImageByPosNum(0, 12);
+                                    break;
+                                case 2:
+                                    DisplayImageByPosNum(1, 12);
+                                    break;
+                                case 3:
+                                    DisplayImageByPosNum(0, 11);
+                                    break;
+                                default:
+                                    DisplayImageByPosNum(0, 7);
+                                    break;
+                            }
+                            break;
                         }
-                        else
+                        if (kokuchiData.Content == "TH66")
                         {
-                            DisplayImageByPos(50, 222);
+                            switch (index)
+                            {
+                                case 0:
+                                case 2:
+                                    DisplayImageByPosNum(1, 12);
+                                    break;
+                                case 1:
+                                case 3:
+                                    DisplayImageByPosNum(0, 12);
+                                    break;
+                                default:
+                                    DisplayImageByPosNum(0, 7);
+                                    break;
+                            }
+                            break;
+                        }
+
+                        //通常種別指定
+                        if (index == 1 || index == 3)
+                        {
+                            DisplayImageByPosNum(0, 11);
+                            break;
+                        }
+                        switch (kokuchiData.Content)
+                        {
+                            case "Local":
+                                DisplayImageByPosNum(3, 0);
+                                break;
+                            case "SemiExp":
+                                DisplayImageByPosNum(3, 1);
+                                break;
+                            case "Exp":
+                                DisplayImageByPosNum(3, 2);
+                                break;
+                            case "RapExp":
+                                DisplayImageByPosNum(3, 3);
+                                break;
+                            case "SecExp":
+                                DisplayImageByPosNum(3, 4);
+                                break;
+                            case "LtdExp":
+                                DisplayImageByPosNum(3, 5);
+                                break;
+                            case "NiS":
+                                DisplayImageByPosNum(3, 6);
+                                break;
+                            case "Po":
+                                DisplayImageByPosNum(3, 7);
+                                break;
+                            case "DanExp":
+                                DisplayImageByPosNum(3, 8);
+                                break;
+                            case "DanRapExp":
+                                DisplayImageByPosNum(3, 9);
+                                break;
+                            case "DanLtdExp":
+                                DisplayImageByPosNum(3, 10);
+                                break;
+                            case "FucExp":
+                                DisplayImageByPosNum(3, 11);
+                                break;
+                            default:
+                                DisplayImageByPosNum(3, 12);
+                                break;
                         }
                         break;
                     case OperationNotificationType.ShuppatsuJikoku:
                         DisplayTimeImage(kokuchiData.Content);
                         break;
-                    case OperationNotificationType.Torikeshi:
-                        DisplayImageByPos(1, 86);
-                        break;
                     default:
-                        DisplayImageByPos(1, 171);
+                        DisplayImageByPosNum(0, 7);
                         break;
                 }
             }
             catch (ATSCommonException ex)
             {
-                DisplayImageByPos(1, 171);
+                DisplayImageByPosNum(0, 7);
             }
+        }
+
+        /// <summary>
+        /// 座標指定で画像出す
+        /// </summary>
+        /// <param name="x"></param>
+        /// <param name="y"></param>
+        /// <param name="width"></param>
+        /// <param name="height"></param>
+        private void DisplayImageByPosNum(int x, int y)
+        {
+            DisplayImageByPos(x * 49 + 1, y * 17 + 1);
         }
 
         /// <summary>
@@ -261,64 +422,82 @@ namespace TatehamaATS_v1.KokuchiWindow
                         //1000+500点滅
                         if (DeltaTime % 1500 < 1000)
                         {
-                            SetLED(KokuchiData);
+                            SetLED(KokuchiData, 0);
                         }
                         else
                         {
-                            DisplayImageByPos(50, 171);
-                            DisplayImageByPos(1, 222);
+                            SetLED(KokuchiData, 1);
                         }
                         break;
                     case OperationNotificationType.TsuuchiKaijo:
                         if (DeltaTime < 5 * 1000)
                         {
-                            //500+250点滅     
+                            //500+250点滅    
                             if (DeltaTime % 750 < 500)
                             {
-                                SetLED(KokuchiData);
+                                SetLED(KokuchiData, 0);
                             }
                             else
                             {
-                                DisplayImageByPos(1, 222);
+                                SetLED(KokuchiData, 1);
                             }
                         }
                         else if (DeltaTime < 20 * 1000)
                         {
-                            //250+250点滅     
+                            //250+250点滅      
                             if (DeltaTime % 500 < 250)
                             {
-                                SetLED(KokuchiData);
+                                SetLED(KokuchiData, 0);
                             }
                             else
                             {
-                                DisplayImageByPos(50, 171);
+                                SetLED(KokuchiData, 1);
                             }
                         }
                         else
                         {
-                            DisplayImageByPos(1, 222);
+                            SetLED(KokuchiData, 1);
                         }
                         break;
                     case OperationNotificationType.Tenmatsusho:
+                        //1500+500点滅      
                         if (DeltaTime % 2000 < 1500)
                         {
-                            //1500+500点滅   
-                            SetLED(KokuchiData);
+                            SetLED(KokuchiData, 0);
                         }
                         else
                         {
-                            DisplayImageByPos(1, 222);
+                            SetLED(KokuchiData, 1);
                         }
                         break;
-                    case OperationNotificationType.Apology:
+                    case OperationNotificationType.Other:
+                        //1000+1000+1000+1000点滅               
                         if (DeltaTime % 2000 < 1000)
                         {
-                            //1500+500点滅        
-                            DisplayImageByPos(1, 137);
+                            SetLED(KokuchiData, 0);
                         }
                         else
                         {
-                            DisplayImageByPos(1, 154);
+                            SetLED(KokuchiData, 1);
+                        }
+                        break;
+                    case OperationNotificationType.Class:
+                        //1000+1000+1000+1000点滅               
+                        if (DeltaTime % 4000 < 1000)
+                        {
+                            SetLED(KokuchiData, 0);
+                        }
+                        else if (DeltaTime % 4000 < 2000)
+                        {
+                            SetLED(KokuchiData, 1);
+                        }
+                        else if (DeltaTime % 4000 < 3000)
+                        {
+                            SetLED(KokuchiData, 2);
+                        }
+                        else
+                        {
+                            SetLED(KokuchiData, 3);
                         }
                         break;
                     default:

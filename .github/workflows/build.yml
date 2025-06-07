@@ -13,6 +13,7 @@ jobs:
     name: "Calc Version"
     outputs:
       VERSION: ${{ steps.calc_version.outputs.VERSION }}
+      APP_PREFIX: ${{ steps.calc_version.outputs.APP_PREFIX }}
     steps:
       - name: Get latest release
         id: latest_release
@@ -51,6 +52,8 @@ jobs:
             VERSION=$(date +%Y%m%d%H%M%S)
           fi
           echo "VERSION=$VERSION" >> "$GITHUB_OUTPUT"
+          file_name_version=$(echo "$VERSION" | sed 's/\./_/g')
+          echo "APP_PREFIX=${{ env.APP_NAME }}_${file_name_version}" >> "$GITHUB_OUTPUT"
   build:
     runs-on: ubuntu-latest
     name: "Build"
@@ -62,8 +65,8 @@ jobs:
     steps:
       - name: Set Zip File Name
         run: |
-          version=$(echo "${{ needs.calc_version.outputs.VERSION }}" | sed 's/\./_/g')
-          echo "ZIP_FILE_NAME=${{ env.APP_NAME }}_${version}${{ (matrix.dev && '-dev') || ''}}${{ (matrix.standalone && '-standalone') || '' }}.zip" >> $GITHUB_ENV
+          echo "APP_VERSION=${{ needs.calc_version.outputs.VERSION }}" >> $GITHUB_ENV
+          echo "ZIP_FILE_NAME=${{ needs.calc_version.outputs.APP_PREFIX }}${{ (matrix.dev && '-dev') || ''}}${{ (matrix.standalone && '-standalone') || '' }}.zip" >> $GITHUB_ENV
       - name: Checkout
         uses: actions/checkout@v4.2.2
       - name: Write ServerAddress.cs
@@ -73,7 +76,13 @@ jobs:
           else
             SERVER_ADDRESS=${{ secrets.SERVER_ADDRESS }}
           fi
-          echo "namespace ${{ env.NAMESPACE }}; public static class ServerAddress { public const string SignalAddress = \"${SERVER_ADDRESS}\"; }" > ./ServerAddress.cs
+          cat <<EOF  > ./ServerAddress.cs
+          namespace ${{ env.NAMESPACE }};
+          public static class ServerAddress {
+              public const string SignalAddress = "${SERVER_ADDRESS}"; 
+              public const string Version = "${{ env.APP_VERSION }}";
+          }
+          EOF
       - name: Setup dotnet 8.0.x
         uses: actions/setup-dotnet@v4.3.1
         with:
@@ -109,15 +118,37 @@ jobs:
         with:
           path: 'out'
           merge-multiple: 'true'
+      - name: Get Files
+        id: get_files
+        run: |
+          files=(
+            "out/${{ needs.calc_version.outputs.APP_PREFIX }}-dev-standalone.zip"
+            "out/${{ needs.calc_version.outputs.APP_PREFIX }}-dev.zip"
+            "out/${{ needs.calc_version.outputs.APP_PREFIX }}-standalone.zip"
+            "out/${{ needs.calc_version.outputs.APP_PREFIX }}.zip"
+          )
+          exists_files=""
+          for file in "${files[@]}"; do
+            echo "Checking file: $file"
+            if [ ! -f "$file" ]; then
+             echo "File $file does not exist, skipping."
+             continue
+            fi
+            if [ -n "$exists_files" ]; then
+              exists_files+=$'\n'
+            fi
+            exists_files+="$file"
+          done
+          {
+            echo 'FILES<<EOF'
+            echo "$exists_files"
+            echo EOF
+          } >> "$GITHUB_OUTPUT"
       - name: Create New Release
         id: create_release
         uses: softprops/action-gh-release@v2.2.1
         with:
           tag_name: ${{ needs.calc_version.outputs.VERSION }}
           make_latest: ${{ github.event_name == 'push' && github.ref == 'refs/heads/master' }}
-          files: |
-            out/*-standalone-dev.zip
-            out/*-dev.zip
-            out/*-standalone.zip
-            out/*.zip
+          files: ${{ steps.get_files.outputs.FILES }}
           prerelease: ${{ github.event_name != 'push' || github.ref != 'refs/heads/master' }}

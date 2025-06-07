@@ -331,7 +331,7 @@ namespace TatehamaATS_v1.OnboardDevice
             {
                 status = ConnectionState.DisConnect;
                 ConnectionStatusChanged?.Invoke(status);
-                throw new RelayConnectException(5, "50300弾かれ", ex);
+                throw new RelayFirstConnectException(5, "50300弾かれ", ex);
             }
         }
 
@@ -363,7 +363,7 @@ namespace TatehamaATS_v1.OnboardDevice
             {
                 status = ConnectionState.DisConnect;
                 ConnectionStatusChanged?.Invoke(status);
-                throw new RelayConnectException(5, "50300弾かれ", ex);
+                throw new RelayConnectException(5, "指示コマンド送信失敗", ex);
             }
         }
 
@@ -566,7 +566,7 @@ namespace TatehamaATS_v1.OnboardDevice
             {
                 status = ConnectionState.DisConnect;
                 ConnectionStatusChanged?.Invoke(status);
-                var e = new RelayConnectException(5, "", ex);
+                var e = new RelayConnectException(5, "指示コマンド送信失敗", ex);
                 AddExceptionAction.Invoke(e);
                 await Task.Delay(1000);
             }
